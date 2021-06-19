@@ -1,0 +1,15 @@
+input EvaluateInput {
+  sfen: String!
+}
+
+type EvaluateOutput {
+  value: Int!
+}
+
+type Query {
+  evaluate(input: EvaluateInput!): EvaluateOutput!
+}
+
+type Mutation {
+  foo: Boolean!
+}
