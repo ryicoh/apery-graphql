@@ -1,9 +1,12 @@
 input EvaluateInput {
   sfen: String!
+  moves: [String!]!
+  timeoutSecond: Int!
 }
 
 type EvaluateOutput {
   value: Int!
+  bestmove: String!
 }
 
 type Query {

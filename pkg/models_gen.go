@@ -3,9 +3,12 @@
 package pkg
 
 type EvaluateInput struct {
-	Sfen string `json:"sfen"`
+	Sfen          string   `json:"sfen"`
+	Moves         []string `json:"moves"`
+	TimeoutSecond int      `json:"timeoutSecond"`
 }
 
 type EvaluateOutput struct {
-	Value int `json:"value"`
+	Value    int    `json:"value"`
+	Bestmove string `json:"bestmove"`
 }

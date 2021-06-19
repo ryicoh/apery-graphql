@@ -9,6 +9,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/ryicoh/apery-graphql/pkg"
+	"github.com/ryicoh/apery-graphql/pkg/apery"
 )
 
 const graphqlEndpoint = "/v1/graphql"
@@ -18,7 +19,7 @@ type HasuraConfig struct {
 	HasuraAdminSecret string `validate:"required"`
 }
 
-func NewServer(port int) *http.Server {
+func NewServer(port int, aperyBin string) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	gin.DisableConsoleColor()
 	router := gin.New()
@@ -30,7 +31,9 @@ func NewServer(port int) *http.Server {
 	router.Use(gin.Recovery())
 	router.Use(cors.Default())
 
-	gqlSvr := handler.NewDefaultServer(pkg.NewExecutableSchema(pkg.Config{Resolvers: &Resolvers{}}))
+	cli := apery.NewAperyClient(aperyBin)
+	gqlSvr := handler.NewDefaultServer(pkg.NewExecutableSchema(
+		pkg.Config{Resolvers: NewResolvers(cli)}))
 
 	router.POST(graphqlEndpoint, gin.WrapH(gqlSvr))
 	router.GET("/", playgroundHandler())

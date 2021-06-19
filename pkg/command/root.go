@@ -42,16 +42,18 @@ func Execute() {
 }
 
 var (
-	port int
+	port   int
+	binary string
 )
 
 func init() {
 	rootCmd.Flags().IntVar(&port, "port", 9012, "server port")
+	rootCmd.Flags().StringVar(&binary, "binary", "apery", "binary path")
 }
 
 func run(cmd *cobra.Command, args []string) error {
 
-	srv := server.NewServer(port)
+	srv := server.NewServer(port, binary)
 
 	errCh := make(chan error, 1)
 	defer close(errCh)

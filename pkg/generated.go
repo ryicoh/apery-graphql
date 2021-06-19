@@ -43,7 +43,8 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	EvaluateOutput struct {
-		Value func(childComplexity int) int
+		Bestmove func(childComplexity int) int
+		Value    func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -76,6 +77,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "EvaluateOutput.bestmove":
+		if e.complexity.EvaluateOutput.Bestmove == nil {
+			break
+		}
+
+		return e.complexity.EvaluateOutput.Bestmove(childComplexity), true
 
 	case "EvaluateOutput.value":
 		if e.complexity.EvaluateOutput.Value == nil {
@@ -169,10 +177,13 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 var sources = []*ast.Source{
 	{Name: "schema.graphqls", Input: `input EvaluateInput {
   sfen: String!
+  moves: [String!]!
+  timeoutSecond: Int!
 }
 
 type EvaluateOutput {
   value: Int!
+  bestmove: String!
 }
 
 type Query {
@@ -291,6 +302,41 @@ func (ec *executionContext) _EvaluateOutput_value(ctx context.Context, field gra
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EvaluateOutput_bestmove(ctx context.Context, field graphql.CollectedField, obj *EvaluateOutput) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EvaluateOutput",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Bestmove, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_foo(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1542,6 +1588,22 @@ func (ec *executionContext) unmarshalInputEvaluateInput(ctx context.Context, obj
 			if err != nil {
 				return it, err
 			}
+		case "moves":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("moves"))
+			it.Moves, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "timeoutSecond":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("timeoutSecond"))
+			it.TimeoutSecond, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -1569,6 +1631,11 @@ func (ec *executionContext) _EvaluateOutput(ctx context.Context, sel ast.Selecti
 			out.Values[i] = graphql.MarshalString("EvaluateOutput")
 		case "value":
 			out.Values[i] = ec._EvaluateOutput_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "bestmove":
+			out.Values[i] = ec._EvaluateOutput_bestmove(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -1965,6 +2032,36 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
