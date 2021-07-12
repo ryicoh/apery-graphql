@@ -28,6 +28,7 @@ func NewServer(port int, aperyBin string) *http.Server {
 		c.String(http.StatusOK, "ok")
 	})
 
+	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 	router.Use(cors.Default())
 

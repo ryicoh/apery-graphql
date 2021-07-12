@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -49,9 +50,16 @@ var (
 func init() {
 	rootCmd.Flags().IntVar(&port, "port", 9012, "server port")
 	rootCmd.Flags().StringVar(&binary, "binary", "apery", "binary path")
+
 }
 
-func run(cmd *cobra.Command, args []string) error {
+func run(cmd *cobra.Command, args []string) (err error) {
+	if p := os.Getenv("PORT"); p != "" {
+		port, err = strconv.Atoi(p)
+		if err != nil {
+			return err
+		}
+	}
 
 	srv := server.NewServer(port, binary)
 

@@ -46,7 +46,7 @@ func (a *aperyClient) Evaluate(ctx context.Context, sfen string, moves []string,
 		return 0, "", err
 	}
 
-	if err := a.setPosition(stdin, sfen, moves); err != nil {
+	if err := a.setPosition(stdin, &stdout, sfen, moves); err != nil {
 		return 0, "", err
 	}
 
@@ -98,11 +98,21 @@ func (a *aperyClient) waitResponse(stdout io.Reader, attemptLimit int, interval 
 	return "", errors.New("attempt limit exceeded")
 }
 
-func (a *aperyClient) setPosition(stdin io.Writer, sfen string, moves []string) error {
+func (a *aperyClient) setPosition(stdin io.Writer, stdout io.Reader, sfen string, moves []string) error {
 	if _, err := io.WriteString(
 		stdin, fmt.Sprintf("position sfen %s moves %s\n", sfen, strings.Join(moves, " "))); err != nil {
 		return err
 	}
+	time.Sleep(100 * time.Millisecond)
+	bytes, err := io.ReadAll(stdout)
+	if err != nil {
+		return err
+	}
+
+	if len(bytes) != 0 {
+		return errors.New(string(bytes))
+	}
+
 	return nil
 }
 
