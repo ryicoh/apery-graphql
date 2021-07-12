@@ -14,4 +14,4 @@ FROM ryicoh/apery
 
 COPY --from=builder /src/apery-graphql /app/qpery-graphql
 
-CMD "/app/qpery-graphql" "--binary" "./apery"
+CMD ./qpery-graphql --binary ./apery
