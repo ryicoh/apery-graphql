@@ -73,9 +73,9 @@ func (a *aperyClient) isReady(stdin io.Writer, stdout io.Reader) error {
 		return err
 	}
 
-	res, err := a.waitResponse(stdout, 50, 100*time.Millisecond)
+	res, err := a.waitResponse(stdout, 1000, 100*time.Millisecond)
 	if err != nil || res != "readyok\n" {
-		return fmt.Errorf("apery がisreadyに対して%d秒以内にreadyokを返しません", 1)
+		return fmt.Errorf("apery がisreadyに対して%d秒以内にreadyokを返しません", 10)
 	}
 	return nil
 }
