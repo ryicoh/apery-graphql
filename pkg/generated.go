@@ -44,6 +44,7 @@ type DirectiveRoot struct {
 type ComplexityRoot struct {
 	EvaluateOutput struct {
 		Bestmove func(childComplexity int) int
+		Pv       func(childComplexity int) int
 		Value    func(childComplexity int) int
 	}
 
@@ -84,6 +85,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EvaluateOutput.Bestmove(childComplexity), true
+
+	case "EvaluateOutput.pv":
+		if e.complexity.EvaluateOutput.Pv == nil {
+			break
+		}
+
+		return e.complexity.EvaluateOutput.Pv(childComplexity), true
 
 	case "EvaluateOutput.value":
 		if e.complexity.EvaluateOutput.Value == nil {
@@ -184,6 +192,7 @@ var sources = []*ast.Source{
 type EvaluateOutput {
   value: Int!
   bestmove: String!
+  pv: [String!]!
 }
 
 type Query {
@@ -337,6 +346,41 @@ func (ec *executionContext) _EvaluateOutput_bestmove(ctx context.Context, field 
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EvaluateOutput_pv(ctx context.Context, field graphql.CollectedField, obj *EvaluateOutput) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EvaluateOutput",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Pv, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_foo(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1636,6 +1680,11 @@ func (ec *executionContext) _EvaluateOutput(ctx context.Context, sel ast.Selecti
 			}
 		case "bestmove":
 			out.Values[i] = ec._EvaluateOutput_bestmove(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pv":
+			out.Values[i] = ec._EvaluateOutput_pv(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

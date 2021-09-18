@@ -7,6 +7,7 @@ input EvaluateInput {
 type EvaluateOutput {
   value: Int!
   bestmove: String!
+  pv: [String!]!
 }
 
 type Query {

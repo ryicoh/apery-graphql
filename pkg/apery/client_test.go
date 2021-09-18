@@ -29,7 +29,7 @@ func TestEvaluate(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
 			defer cancel()
 
-			value, bestmove, err := cli.Evaluate(ctx, tt.given, []string{"7g7f", "3c3d", "2g2f"}, 1*time.Second)
+			value, bestmove, _, err := cli.Evaluate(ctx, tt.given, []string{"7g7f", "3c3d", "2g2f"}, 1*time.Second)
 
 			if value != tt.expectValue {
 				t.Errorf("(%s): expected %d, actual %d", tt.given, tt.expectValue, value)

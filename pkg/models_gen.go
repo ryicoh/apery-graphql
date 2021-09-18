@@ -9,6 +9,7 @@ type EvaluateInput struct {
 }
 
 type EvaluateOutput struct {
-	Value    int    `json:"value"`
-	Bestmove string `json:"bestmove"`
+	Value    int      `json:"value"`
+	Bestmove string   `json:"bestmove"`
+	Pv       []string `json:"pv"`
 }

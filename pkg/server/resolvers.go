@@ -42,12 +42,12 @@ func (q *queryResolver) Evaluate(ctx context.Context, input pkg.EvaluateInput) (
 		return nil, errors.New("timeoutSecond は30以下にしてください")
 	}
 
-	value, bestmove, err := q.resolvers.aperyClient.Evaluate(
+	value, bestmove, pv, err := q.resolvers.aperyClient.Evaluate(
 		ctx, input.Sfen, input.Moves,
 		time.Duration(input.TimeoutSecond)*time.Second)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pkg.EvaluateOutput{Value: value, Bestmove: bestmove}, nil
+	return &pkg.EvaluateOutput{Value: value, Bestmove: bestmove, Pv: pv}, nil
 }
