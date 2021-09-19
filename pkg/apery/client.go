@@ -14,11 +14,19 @@ import (
 
 type (
 	AperyClient interface {
-		Evaluate(ctx context.Context, sfen string, moves []string, timeout time.Duration) (value int, bestmove string, pv []string, err error)
+		Evaluate(ctx context.Context, sfen string, moves []string, timeout time.Duration) (result *EvaluationResult, err error)
 	}
 
 	aperyClient struct {
 		bin string
+	}
+
+	EvaluationResult struct {
+		Value    int
+		Nodes    int
+		Depth    int
+		Bestmove string
+		Pv       []string
 	}
 )
 
@@ -26,7 +34,7 @@ func NewAperyClient(bin string) AperyClient {
 	return &aperyClient{bin}
 }
 
-func (a *aperyClient) Evaluate(ctx context.Context, sfen string, moves []string, timeout time.Duration) (value int, bestmove string, pv []string, err error) {
+func (a *aperyClient) Evaluate(ctx context.Context, sfen string, moves []string, timeout time.Duration) (result *EvaluationResult, err error) {
 	cmd := exec.CommandContext(ctx, a.bin)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -34,38 +42,38 @@ func (a *aperyClient) Evaluate(ctx context.Context, sfen string, moves []string,
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		return 0, "", nil, err
+		return nil, err
 	}
 	defer stdin.Close()
 
 	if err := cmd.Start(); err != nil {
-		return 0, "", nil, err
+		return nil, err
 	}
 
 	if err := a.isReady(stdin, &stdout); err != nil {
-		return 0, "", nil, err
+		return nil, err
 	}
 
 	if err := a.setPosition(stdin, &stdout, sfen, moves); err != nil {
-		return 0, "", nil, err
+		return nil, err
 	}
 
 	if err := a._go(stdin); err != nil {
-		return 0, "", nil, err
+		return nil, err
 	}
 
 	time.Sleep(timeout)
 
 	if err := a.stop(stdin); err != nil {
-		return 0, "", nil, err
+		return nil, err
 	}
 
-	value, bestmove, pv, err = a.getResult(&stdout)
+	result, err = a.getResult(&stdout)
 	if err != nil {
-		return 0, "", nil, err
+		return nil, err
 	}
 
-	return value, bestmove, pv, nil
+	return result, nil
 }
 
 func (a *aperyClient) isReady(stdin io.Writer, stdout io.Reader) error {
@@ -130,36 +138,52 @@ func (a *aperyClient) stop(stdin io.Writer) error {
 	return nil
 }
 
-func (a *aperyClient) getResult(stdout io.Reader) (value int, bestmove string, pv []string, err error) {
+func (a *aperyClient) getResult(stdout io.Reader) (result *EvaluationResult, err error) {
+	result = new(EvaluationResult)
+
 	res, err := a.waitResponse(stdout, 10, 100*time.Millisecond)
 	logs := strings.TrimRight(string(res), "\n")
 	lines := strings.Split(logs, "\n")
+
 	if err != nil || !strings.Contains(logs, "bestmove") || len(lines) <= 2 {
-		return 0, "", nil, fmt.Errorf("bestmoveが得られません")
+		return nil, fmt.Errorf("bestmoveが得られません")
 	}
 
 	bestmoveline := lines[len(lines)-1]
-	bestmove = strings.Split(bestmoveline, " ")[1]
+	result.Bestmove = strings.Split(bestmoveline, " ")[1]
 
 	lastInfoLine := lines[len(lines)-2]
 	lastInfoLineParts := strings.Split(lastInfoLine, " ")
-	pv = make([]string, 0, 10)
+	result.Pv = make([]string, 0, 10)
 
 	for i, part := range lastInfoLineParts {
 		if part == "cp" {
-			value, err = strconv.Atoi(lastInfoLineParts[i+1])
+			result.Value, err = strconv.Atoi(lastInfoLineParts[i+1])
 			if err != nil {
-				return 0, "", nil, err
+				return nil, err
+			}
+		}
+
+		if part == "depth" {
+			result.Depth, err = strconv.Atoi(lastInfoLineParts[i+1])
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		if part == "nodes" {
+			result.Nodes, err = strconv.Atoi(lastInfoLineParts[i+1])
+			if err != nil {
+				return nil, err
 			}
 		}
 
 		if part == "pv" {
 			for _, p := range lastInfoLineParts[i+1:] {
-				pv = append(pv, p)
+				result.Pv = append(result.Pv, p)
 			}
-			break
 		}
 	}
 
-	return value, bestmove, pv, nil
+	return result, nil
 }

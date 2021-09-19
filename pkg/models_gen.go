@@ -10,6 +10,8 @@ type EvaluateInput struct {
 
 type EvaluateOutput struct {
 	Value    int      `json:"value"`
+	Nodes    int      `json:"nodes"`
+	Depth    int      `json:"depth"`
 	Bestmove string   `json:"bestmove"`
 	Pv       []string `json:"pv"`
 }

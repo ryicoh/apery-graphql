@@ -6,6 +6,8 @@ input EvaluateInput {
 
 type EvaluateOutput {
   value: Int!
+  nodes: Int!
+  depth: Int!
   bestmove: String!
   pv: [String!]!
 }

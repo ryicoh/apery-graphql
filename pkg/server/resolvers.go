@@ -38,16 +38,22 @@ func (r *Resolvers) Query() pkg.QueryResolver {
 }
 
 func (q *queryResolver) Evaluate(ctx context.Context, input pkg.EvaluateInput) (*pkg.EvaluateOutput, error) {
-	if input.TimeoutSecond >= 30 {
-		return nil, errors.New("timeoutSecond は30以下にしてください")
+	if input.TimeoutSecond > 30 {
+		return nil, errors.New("timeoutSecond は30秒より少なくしてください")
 	}
 
-	value, bestmove, pv, err := q.resolvers.aperyClient.Evaluate(
+	result, err := q.resolvers.aperyClient.Evaluate(
 		ctx, input.Sfen, input.Moves,
 		time.Duration(input.TimeoutSecond)*time.Second)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pkg.EvaluateOutput{Value: value, Bestmove: bestmove, Pv: pv}, nil
+	return &pkg.EvaluateOutput{
+		Value:    result.Value,
+		Bestmove: result.Bestmove,
+		Pv:       result.Pv,
+		Nodes:    result.Nodes,
+		Depth:    result.Depth,
+	}, nil
 }
